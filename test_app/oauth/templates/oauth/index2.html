@@ -78,27 +78,57 @@
     }
         
     </style>
+    <script src="//ajax.googleapis.com/ajax/libs/jquery/1.8.2/jquery.min.js"></script>
+    <script src="//ajax.googleapis.com/ajax/libs/jqueryui/1.8.23/jquery-ui.min.js"></script>
+    <script>
+    function widget(id, url){
+        var hheader = ['name', 'kind', 'created', 'updated'];
+        function init(){
+            var thead = $('<thead></thead>').append();
+            var tr = $('<tr></tr>');
+            for(var a=0; a < hheader.length; ++a){
+                var th = $('<th></th>').attr('scope','col').text(hheader[a].charAt(0).toUpperCase() + hheader[a].slice(1));
+                tr.append(th);
+            }
+            var table = $('<table></table>').append(thead.append(tr)).attr('id',id).append($('<tbody></tbody>'));
+            table.data('widget_data_' + id);
+            return table;
+        }
+        function updateData(element, data){
+            var current_data = element.data('widget_data_' + id);
+            $.extend(true, current_data, data);
+            element.data('widget_data_' + id, data);
+        }
+        function refreshData(data){
+            updateData(element, data);
+            element.children('tbody').find('tr').remove();
+            for(var a=0; a < data.items.length; ++a){
+                var tr = $('<tr></tr>');
+                for(var b=0; b < hheader.length; ++b){
+                    tr.append($('<td></td>').text(data.items[a][hheader[b]]));
+                }
+                element.append(tr);
+            }
+        }
+        function fetchData(){
+            $.get(url, function(dd){refreshData(dd)}, 'json');
+        }
+        function startInterval(fn, seconds){
+            setInterval(function(){fn();},seconds*1000);
+        }
+        var element = init();
+        fetchData();
+        startInterval(fetchData, 10);
+        return element;
+    }
+    $(document).ready(function(){
+        var w1 = widget('table1','/api?call=/management/accounts/list');
+        $('body').append(w1);
+    })
+    </script>
   </head>
   <body>
-      <h1>{%trans "Hi"%} {{user.username}}! {%trans "Here are your Google analytics accounts"%} </h1>
-      <table>
-        <thead>
-            <tr>
-                <th scope="col">{%trans "Name"%}</th>
-                <th scope="col">{%trans "Kind"%}</th>
-                <th scope="col">{%trans "Created"%}</th>
-                <th scope="col">{%trans "Updated"%}</th>
-            </tr>
-        </thead>
-        {% for item in items %}
-        <tr>
-            <td><a href="{{item.selfLink}}" target="_blank">{{item.name}}</td>
-            <td>{{item.kind}}</td>
-            <td>{{item.created}}</td>
-            <td>{{item.updated}}</td>
-        </tr>
-        {%endfor%}
-    </table>
+    <h1>{%trans "Hi"%} {{user.username}}! {%trans "The AJAXed version of the app"%}:</h1>
     <br/><br/><a href="{%url logout%}">LOG OUT</a>
   </body>
 </html>

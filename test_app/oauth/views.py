@@ -8,6 +8,7 @@ from django.http import HttpResponseRedirect, HttpResponseBadRequest
 from django.http import HttpResponseForbidden, HttpResponse
 from django.shortcuts import render_to_response, get_object_or_404
 from django.template import RequestContext
+from django.utils import simplejson
 from django.utils.translation import ugettext as _
 from apiclient.discovery import build
 from oauth2client import xsrfutil
@@ -33,7 +34,7 @@ def get_credential(user):
 
 
 @login_required
-def home(request):
+def home(request, template='oauth/index.html'):
     # store and retrieve Credentials objects using a model 
     # defined with a CredentialsField object
     credential = get_credential(request.user)
@@ -57,7 +58,7 @@ def home(request):
         """
         context = { 'items': accounts['items'], }
         print context
-        return render_to_response('oauth/index.html', context,
+        return render_to_response(template, context,
                    context_instance=RequestContext(request))
 
 
@@ -80,7 +81,7 @@ def widget_process(request):
                                       for elem in api_call.split('/') if elem])
                 result = eval('service.' + real_call + '.execute()')
                 print result
-                return HttpResponse(result, content_type='application/json')
+                return HttpResponse(simplejson.dumps(result), content_type='application/json')
         except:
             pass
     return HttpResponseForbidden()

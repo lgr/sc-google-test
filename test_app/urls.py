@@ -13,6 +13,8 @@ admin.autodiscover()
 urlpatterns = patterns('',
     # Examples:
     url(r'^$', 'test_app.oauth.views.home', name='home'),
+    url(r'^ajax$', 'test_app.oauth.views.home',
+        {'template': 'oauth/index2.html'}, name='home_ajax'),
     url(r'^oauth2callback',
         'test_app.oauth.views.auth_return', name='auth_return'),
     # url(r'qrcode/(?P<key>.+)$', qrcode_view, name='qrcode'),
