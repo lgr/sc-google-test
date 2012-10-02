@@ -3,6 +3,8 @@
 import os
 import httplib2
 import traceback
+import urllib
+import urlparse
 
 from django.contrib.auth.decorators import login_required
 from django.http import HttpResponseRedirect, HttpResponseBadRequest
@@ -18,14 +20,16 @@ from oauth2client.django_orm import Storage
 
 from test_app import settings
 from models import *
+from universal_rest import RESTCall
 
-
+MAX_URI_LENGTH = 4000
 CLIENT_SECRETS = os.path.join(os.path.dirname(__file__),
                               '..', 'client_secrets.json')
 FLOW = flow_from_clientsecrets(
     CLIENT_SECRETS,
 #    scope='https://www.googleapis.com/auth/plus.me',
-    scope='https://www.googleapis.com/auth/analytics.readonly',
+#    scope='https://www.googleapis.com/auth/analytics.readonly',
+    scope='https://www.googleapis.com/auth/drive',
     redirect_uri='http://localhost:8000/oauth2callback')
 
 
@@ -46,17 +50,16 @@ def home(request, template='oauth/index.html'):
         authorize_url = FLOW.step1_get_authorize_url()
         return HttpResponseRedirect(authorize_url)
     else:
+        print template
+        if template != 'oauth/index.html':
+            return render_to_response(template, {},
+                   context_instance=RequestContext(request))
         http = httplib2.Http()
         http = credential.authorize(http)
         service = build("analytics", "v3", http=http)
+        #service = build("drive", "v2", http=http)
         # Get a list of all Google Analytics accounts for this user
         accounts = service.management().accounts().list().execute()
-        """
-        activities = service.activities()
-        activitylist = activities.list(collection='public',
-                                       userId='me').execute()
-        print activitylist
-        """
         context = { 'items': accounts['items'], }
         print context
         return render_to_response(template, context,
@@ -81,12 +84,60 @@ def widget_process(request):
                 real_call = '.'.join([elem + '()'
                                       for elem in api_call.split('/') if elem])
                 result = eval('service.' + real_call + '.execute()')
-                print result
-                return HttpResponse(simplejson.dumps(result), content_type='application/json')
+                return HttpResponse(simplejson.dumps(result),
+                                    content_type='application/json')
         except:
             traceback.print_exc()
     return HttpResponseForbidden()
 
+
+def execute(http, request):
+    if 'content-length' not in request['headers']:
+        request['headers']['content-length'] = str(request['body_size'])
+      # If the request URI is too long then turn it into a POST request.
+    if len(request['uri']) > MAX_URI_LENGTH and request['method'] == 'GET':
+        request['method'] = 'POST'
+        request['headers']['x-http-method-override'] = 'GET'
+        request['headers']['content-type'] = 'application/x-www-form-urlencoded'
+        parsed = urlparse.urlparse(request.uri)
+        request['uri'] = urlparse.urlunparse(
+            (parsed.scheme, parsed.netloc, parsed.path, parsed.params, None,
+             None)
+            )
+        request['body'] = parsed.query
+        request['headers']['content-length'] = str(len(request['body']))
+    resp, content = http.request(request['uri'], method=request['method'],
+                                   body=request['body'],
+                                   headers=request['headers'])
+    if resp.status >= 300:
+        raise Exception(resp, content, uri=request['uri'])
+    return content
+
+
+def widget_process_rest(request):
+    if request.user.is_authenticated():
+        try:
+            api_call = request.GET['call']
+            credential = get_credential(request.user)
+            if credential is None:
+                raise Exception()
+            else:
+                http = httplib2.Http()
+                http = credential.authorize(http)
+                # uri = 'https://www.googleapis.com/analytics/v3' + api_call
+                uri = 'https://www.googleapis.com/drive/v2' + api_call
+                rest_res = {'headers': {},
+                            'uri': uri,
+                            'body_size': 0,
+                            'method': 'GET',
+                            'body': ''}
+                result = execute(http, rest_res)
+                print result
+                return HttpResponse(result,
+                                    content_type='application/json')
+        except:
+            traceback.print_exc()
+    return HttpResponseForbidden()
 
 
 @login_required

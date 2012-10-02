@@ -1,0 +1,21 @@
+{% load i18n %}
+<html>
+  <head>
+    <title>{%trans "An exemplary OAuth Google app"%}</title>
+    <link rel="stylesheet" type="text/css" href="{{ STATIC_URL }}css/style.css" media="screen" />
+    <script src="//ajax.googleapis.com/ajax/libs/jquery/1.8.2/jquery.min.js"></script>
+    <script src="//ajax.googleapis.com/ajax/libs/jqueryui/1.8.23/jquery-ui.min.js"></script>
+    <script type="text/javascript" src="{{ STATIC_URL }}js/widget.js"></script>
+    <script>
+    $(document).ready(function(){
+        //var w1 = widget('table1','/api_rest?call=/management/accounts/29134103/webproperties/');
+        var w1 = widget('table1','/api_rest?call=/files');
+        $('body').append(w1);
+    })
+    </script>
+  </head>
+  <body>
+    <h1>{%trans "Hi"%} {{user.username}}! {%trans "The AJAXed version of the app that makes direct RESTfull calls"%}:</h1>
+    <br/><br/><a href="{%url logout%}">LOG OUT</a>
+  </body>
+</html>

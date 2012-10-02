@@ -698,7 +698,6 @@ Returns:
       request.uri = uri
 
       logger.info('URL being requested: %s' % uri)
-
       return request
 
     setattr(theclass, methodName, methodNext)

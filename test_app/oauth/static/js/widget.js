@@ -18,6 +18,8 @@ function widget(id, url){
     }
     function refreshData(data){
         updateData(element, data);
+        console.log(data);
+        /*
         element.children('tbody').find('tr').remove();
         for(var a=0; a < data.items.length; ++a){
             var tr = $('<tr></tr>');
@@ -26,6 +28,7 @@ function widget(id, url){
             }
             element.append(tr);
         }
+        */
     }
     function fetchData(){
         $.get(url, function(dd){refreshData(dd)}, 'json');
