@@ -2,6 +2,7 @@
 
 import os
 import httplib2
+import traceback
 
 from django.contrib.auth.decorators import login_required
 from django.http import HttpResponseRedirect, HttpResponseBadRequest
@@ -83,7 +84,7 @@ def widget_process(request):
                 print result
                 return HttpResponse(simplejson.dumps(result), content_type='application/json')
         except:
-            pass
+            traceback.print_exc()
     return HttpResponseForbidden()
 
 
